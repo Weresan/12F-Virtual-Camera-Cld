@@ -5,9 +5,9 @@ import CoreGraphics
 final class CompositionGuideTests: XCTestCase {
     func testFittedCameraRectExcludesLetterbox() {
         let rect = CompositionGeometry.fittedRect(image:CGSize(width:1920,height:1080),container:CGSize(width:1000,height:1000))
-        XCTAssertEqual(rect.width,1000)
-        XCTAssertEqual(rect.height,562.5)
-        XCTAssertEqual(rect.minY,218.75)
+        XCTAssertEqual(rect.width,1000,accuracy:0.00001)
+        XCTAssertEqual(rect.height,562.5,accuracy:0.00001)
+        XCTAssertEqual(rect.minY,218.75,accuracy:0.00001)
         XCTAssertEqual(CompositionGeometry.lines(.thirds,in:rect).count,4)
         for line in CompositionGeometry.lines(.thirds,in:rect) {
             XCTAssertGreaterThanOrEqual(line.start.y,rect.minY)
