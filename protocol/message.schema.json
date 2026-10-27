@@ -1,0 +1,24 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"urn:12frames:vcam:message:1",
+  "title":"12F Virtual Camera v1 client envelope",
+  "type":"object",
+  "required":["v","type","session","seq","t","payload"],
+  "properties":{
+    "v":{"const":1},
+    "type":{"enum":["hello","pose","settings","command","heartbeat"]},
+    "session":{"type":"string","minLength":1,"maxLength":128},
+    "seq":{"type":"integer","minimum":0},
+    "t":{"type":"number","minimum":0},
+    "payload":{"type":"object"}
+  },
+  "allOf":[
+    {"if":{"properties":{"type":{"const":"pose"}}},"then":{"properties":{"payload":{"type":"object","required":["position","rotation","quality"],"properties":{"position":{"$ref":"#/$defs/vec3"},"rotation":{"$ref":"#/$defs/quat"},"quality":{"enum":["normal","limited","lost","manual"]}}}}}},
+    {"if":{"properties":{"type":{"const":"command"}}},"then":{"properties":{"payload":{"required":["name"],"properties":{"name":{"enum":["recenter","record","stop","preview_start","preview_stop"]}}}}}},
+    {"if":{"properties":{"type":{"const":"settings"}}},"then":{"properties":{"payload":{"minProperties":1,"additionalProperties":false,"properties":{"lens":{"type":"number","minimum":8,"maximum":300},"focus":{"type":"number","minimum":0.01,"maximum":10000},"aperture":{"type":"number","minimum":0.7,"maximum":64},"scale":{"type":"number","minimum":0.01,"maximum":100}}}}}}
+  ],
+  "$defs":{
+    "vec3":{"type":"array","minItems":3,"maxItems":3,"items":{"type":"number"}},
+    "quat":{"type":"array","minItems":4,"maxItems":4,"items":{"type":"number"}}
+  }
+}

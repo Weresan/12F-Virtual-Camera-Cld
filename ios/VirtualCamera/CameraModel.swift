@@ -26,6 +26,13 @@ final class CameraModel: NSObject, ObservableObject, ARSessionDelegate {
     @Published var lens = 35.0
     @Published var focus = 5.0
     @Published var aperture = 2.8
+    @Published var previewReceivedAt: Date?
+    @Published var previewStatus = "Waiting for Blender"
+    @Published var supportsPreviewControl = false
+    @Published var previewEnabled = true
+    @Published var needsRecenter = false
+    @Published var monitorSource = "LIVE"
+    @Published var cameraName = "12F Camera"
     let ar = ARSession()
     private let motion = CMMotionManager()
     private var socket: URLSessionWebSocketTask?
@@ -80,15 +87,24 @@ final class CameraModel: NSObject, ObservableObject, ARSessionDelegate {
                           let payload = object["payload"] as? [String: Any] {
                            if let message = payload["status"] as? String { status = message }
                            if let recording = payload["recording"] as? Bool { setRecording(recording) }
+                           previewStatus = payload["preview_status"] as? String ?? "Update the Blender add-on to 0.2.0 for live preview"
+                           previewEnabled = payload["preview_enabled"] as? Bool ?? false
+                           needsRecenter = payload["needs_recenter"] as? Bool ?? false
+                           monitorSource = payload["monitor_source"] as? String ?? "LIVE"
+                           cameraName = payload["camera"] as? String ?? "12F Camera"
+                           if let value = payload["lens"] as? Double { lens = value }
+                           if let value = payload["focus"] as? Double { focus = value }
+                           if let value = payload["aperture"] as? Double { aperture = value }
                        }
                        if object["type"] as? String == "paired" {
                         guard !paired else { return }
                         paired = true; isConnecting = false; isConnected = true; status = "Paired"
+                        supportsPreviewControl = (object["capabilities"] as? [String] ?? []).contains("preview-control")
                         // Optional: the Blender add-on may send {"type":"paired","payload":{"name":"My PC"}}.
                         let name = (object["payload"] as? [String: Any])?["name"] as? String
                         remember(name: name)
                         send("hello", ["client": "ios", "capabilities": ["arkit6dof", "coremotion"]])
-                        pushSettings()
+                        // Preserve the artist's current optics; receive them from Blender state.
                         Task { await startTracking() }
                         heartbeat = Task { [weak self] in
                             while !Task.isCancelled {
@@ -206,6 +222,7 @@ final class CameraModel: NSObject, ObservableObject, ARSessionDelegate {
 
     private func tickPreview() {
         let now = ProcessInfo.processInfo.systemUptime
+        previewReceivedAt = Date()
         if lastPreviewTime > 0 {
             let instant = 1 / max(now - lastPreviewTime, 0.001)
             previewFPS = previewFPS == 0 ? instant : previewFPS * 0.9 + instant * 0.1
@@ -217,6 +234,7 @@ final class CameraModel: NSObject, ObservableObject, ARSessionDelegate {
         heartbeat?.cancel(); heartbeat = nil
         paired = false; isConnected = false; isConnecting = false; quality = "Not tracking"; ar.pause(); motion.stopDeviceMotionUpdates()
         previewImage = nil; previewFPS = 0; lastPreviewTime = 0; setRecording(false); activeComputer = nil
+        previewReceivedAt = nil; supportsPreviewControl = false
         socket?.cancel(with: .goingAway, reason: nil); socket = nil
     }
     private func fail(_ error: Error) { disconnect(); status = error.localizedDescription }

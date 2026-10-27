@@ -7,4 +7,5 @@ recordings/
 certificates/
 ios/build/
 ios/DerivedData/
+ios/SimulatorData/
 *.xcuserstate

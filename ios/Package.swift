@@ -6,6 +6,6 @@ let package = Package(
     targets: [
         .target(name: "PairingCore", path: "VirtualCamera",
             exclude: ["CameraModel.swift", "ContentView.swift", "VirtualCameraApp.swift", "SavedComputer.swift", "HomeView.swift", "LiveCameraView.swift", "Info.plist", "Info-Debug.plist"],
-            sources: ["PairingEndpoint.swift"]),
+            sources: ["PairingEndpoint.swift", "CompositionGuide.swift"]),
         .testTarget(name: "PairingCoreTests", dependencies: ["PairingCore"], path: "Tests")
     ])

@@ -1,5 +1,7 @@
 # 12F protocol v1
 
+0.2.0 additions: `paired.capabilities` advertises `live-preview`, `preview-control`, and `camera-state`. When `preview-control` is present, command names `preview_start` and `preview_stop` toggle preview. State may include `preview_status`, `preview_fps`, `preview_enabled`, `monitor_source` (LIVE/TAKE), `camera`, `lens`, `focus`, `aperture`, and `needs_recenter`. JPEG binary messages now carry successive live frames. Old clients may ignore these optional state fields. New clients must not send preview commands to a server that lacks the capability. Optics settings remain the existing v1 message and are sampled alongside recorded poses.
+
 Local TCP port 8765; HTTP(S) `/` serves the controller, WebSocket `/ws` carries control. Use TLS for secure sessions. All JSON is UTF-8, max 8192 bytes. Client first sends `{"token":"<QR bearer token>"}` within five seconds. Server returns `{"v":1,"type":"paired"}` or closes with 1008. Only one authenticated controller is allowed. Stop/restart rotates the token.
 
 Every client message thereafter:

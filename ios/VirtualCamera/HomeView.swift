@@ -2,9 +2,9 @@ import SwiftUI
 import VisionKit
 
 enum Theme {
-    static let background = Color(red: 0.16, green: 0.17, blue: 0.19)
-    static let card = Color(red: 0.21, green: 0.22, blue: 0.24)
-    static let accent = Color(red: 0.55, green: 0.75, blue: 1.0)
+    static let background = Color(red: 23/255, green: 36/255, blue: 59/255) // INK #17243B
+    static let card = Color(red: 29/255, green: 46/255, blue: 73/255)
+    static let accent = Color(red: 0.22, green: 0.57, blue: 1.0)
 }
 
 /// Launch screen: previously paired computers plus Scan QR / paste-link actions.
@@ -57,7 +57,7 @@ struct HomeView: View {
                 Button(action: manual) { Label("Enter Link", systemImage: "link") }
             }
             .font(.subheadline.weight(.semibold))
-            .tint(.white)
+            .tint(Theme.accent)
             .padding(.horizontal, 6)
         }
     }
