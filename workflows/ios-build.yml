@@ -1,0 +1,36 @@
+name: iOS compile and pairing tests
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test pairing parser (Debug and Release)
+        working-directory: ios
+        run: |
+          swift test
+          swift test -c release
+      - name: Compile native app for iPhone without signing
+        run: >-
+          xcodebuild -project ios/VirtualCamera.xcodeproj -scheme VirtualCamera
+          -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS'
+          -derivedDataPath ios/DerivedData CODE_SIGNING_ALLOWED=NO build
+      - name: Compile production configuration
+        run: >-
+          xcodebuild -project ios/VirtualCamera.xcodeproj -scheme VirtualCamera
+          -configuration Release -sdk iphoneos -destination 'generic/platform=iOS'
+          -derivedDataPath ios/DerivedData CODE_SIGNING_ALLOWED=NO build
+      - name: Archive unsigned app bundles
+        run: |
+          mkdir -p ios/build
+          ditto -c -k --keepParent ios/DerivedData/Build/Products/Debug-iphoneos/VirtualCamera.app ios/build/VirtualCamera-Debug-unsigned.zip
+          ditto -c -k --keepParent ios/DerivedData/Build/Products/Release-iphoneos/VirtualCamera.app ios/build/VirtualCamera-Release-unsigned.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 12F-iOS-unsigned-apps
+          path: ios/build/*.zip
+          retention-days: 7
