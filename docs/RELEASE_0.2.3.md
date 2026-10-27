@@ -20,6 +20,6 @@ State adds takes [{id,label,start,end,fps}], selected_take, review_frame and rev
 
 ## Validation
 
-29 Python tests passed, including operation bounds, a concurrent operator/viewer, denied viewer control and four-viewer limit. Blender 4.4 and 5.2 isolated smoke checks passed for catalog/review/rename/scrub/play/end/live return and animation preservation. Browser JS syntax passed. Native CI results and browser visual acceptance are recorded after execution. Physical phone orientation transitions, Wi-Fi throughput and multi-device playback remain hardware acceptance tasks.
+29 Python tests passed, including operation bounds, a concurrent operator/viewer, denied viewer control and four-viewer limit. Blender 4.4 and 5.2 isolated smoke checks passed for catalog/review/rename/scrub/play/end/live return and animation preservation. Browser JS syntax passed. Native CI passed eight Swift tests per configuration, Debug/Release iPhone builds and simulator launch. Browser monitor connection, layout, stale-frame handling and IP-only link entry were visually checked with isolated test data. See VALIDATION_0.2.3.md. Physical phone orientation transitions, Wi-Fi throughput and multi-device playback remain hardware acceptance tasks.
 
 Files: core.py, server.py, blender.py, monitor HTML/CSS/JS, RecordedTake.swift, TakeBrowserView.swift, CameraModel/LiveCameraView, Xcode/Swift package configuration, tests and distribution ZIP. Next: hardware acceptance, then adaptive preview and configurable horizon controls.
