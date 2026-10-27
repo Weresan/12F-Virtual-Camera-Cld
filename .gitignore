@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+pairing.html
+pairing.png
+ios/.build/
+recordings/
+certificates/
+ios/build/
+ios/DerivedData/
+*.xcuserstate
