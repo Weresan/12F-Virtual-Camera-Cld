@@ -2,7 +2,7 @@
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]/'ios'
 folder=ROOT/'VirtualCamera.xcodeproj';folder.mkdir(exist_ok=True)
-sources=['VirtualCameraApp.swift','CameraModel.swift','ContentView.swift','PairingEndpoint.swift','SavedComputer.swift','HomeView.swift','LiveCameraView.swift','CompositionGuide.swift','TrackingOrientation.swift']
+sources=['VirtualCameraApp.swift','CameraModel.swift','ContentView.swift','PairingEndpoint.swift','SavedComputer.swift','HomeView.swift','LiveCameraView.swift','CompositionGuide.swift','TrackingOrientation.swift','RecordedTake.swift','TakeBrowserView.swift']
 def ident(n):return f'{n:024X}'
 objects=[]
 for i,name in enumerate(sources):

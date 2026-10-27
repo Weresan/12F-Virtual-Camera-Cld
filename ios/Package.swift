@@ -5,7 +5,7 @@ let package = Package(
     products: [.library(name: "PairingCore", targets: ["PairingCore"])],
     targets: [
         .target(name: "PairingCore", path: "VirtualCamera",
-            exclude: ["CameraModel.swift", "ContentView.swift", "VirtualCameraApp.swift", "SavedComputer.swift", "HomeView.swift", "LiveCameraView.swift", "Info.plist", "Info-Debug.plist", "Assets.xcassets"],
-            sources: ["PairingEndpoint.swift", "CompositionGuide.swift", "TrackingOrientation.swift"]),
+            exclude: ["CameraModel.swift", "ContentView.swift", "VirtualCameraApp.swift", "SavedComputer.swift", "HomeView.swift", "LiveCameraView.swift", "Info.plist", "Info-Debug.plist", "Assets.xcassets", "TakeBrowserView.swift"],
+            sources: ["PairingEndpoint.swift", "CompositionGuide.swift", "TrackingOrientation.swift", "RecordedTake.swift"]),
         .testTarget(name: "PairingCoreTests", dependencies: ["PairingCore"], path: "Tests")
     ])

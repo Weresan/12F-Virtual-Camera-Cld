@@ -4,6 +4,7 @@ import SwiftUI
 struct LiveCameraView: View {
     @ObservedObject var model: CameraModel
     @State private var showControls = false
+    @State private var showTakes = false
     @AppStorage("compositionGuide") private var guideChoice = GuideMode.thirds.rawValue
     @State private var monitorZoom = 1.0
     @State private var pinchStart = 1.0
@@ -23,7 +24,7 @@ struct LiveCameraView: View {
         }
         .overlay(alignment: .trailing) { rail.padding(.trailing, 12) }
         .overlay {
-            if !model.trackingReady {
+            if !model.trackingReady && model.monitorSource == "LIVE" {
                 Label("Hold phone in landscape — tracking paused", systemImage: "iphone.gen3.radiowaves.left.and.right")
                     .font(.headline).padding().background(Theme.background.opacity(0.95), in: RoundedRectangle(cornerRadius: 12))
                     .allowsHitTesting(false)
@@ -32,6 +33,7 @@ struct LiveCameraView: View {
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
         .tint(Theme.accent)
+        .sheet(isPresented: $showTakes) { TakeBrowserView(model: model) }
     }
 
     // MARK: Preview
@@ -165,7 +167,13 @@ struct LiveCameraView: View {
 
     @ViewBuilder private var bottomBar: some View {
         HStack {
-            if showControls {
+            Button { showTakes = true } label: {
+                Label("Takes",systemImage: "film.stack").font(.footnote.weight(.semibold))
+                    .padding(10).background(.ultraThinMaterial,in:Capsule())
+            }.tint(Theme.accent)
+            if model.monitorSource == "TAKE" {
+                TakePlaybackBar(model: model)
+            } else if showControls {
                 controlsPanel
             } else {
                 Button { withAnimation(.easeInOut(duration: 0.2)) { showControls = true } } label: {

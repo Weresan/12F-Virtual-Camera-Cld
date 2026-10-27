@@ -35,6 +35,11 @@ final class CameraModel: NSObject, ObservableObject, ARSessionDelegate {
     @Published var cameraName = "12F Camera"
     @Published var trackingFPS = 60.0
     @Published var trackingReady = false
+    @Published var supportsTakeBrowser = false
+    @Published var takes: [RecordedTake] = []
+    @Published var selectedTake = ""
+    @Published var reviewFrame = 0
+    @Published var reviewPlaying = false
     private var orientationGate = TrackingOrientation()
     let ar = ARSession()
     private let motion = CMMotionManager()
@@ -98,11 +103,17 @@ final class CameraModel: NSObject, ObservableObject, ARSessionDelegate {
                            if let value = payload["lens"] as? Double { lens = value }
                            if let value = payload["focus"] as? Double { focus = value }
                            if let value = payload["aperture"] as? Double { aperture = value }
+                           if let rows = payload["takes"], let data = try? JSONSerialization.data(withJSONObject: rows),
+                              let items = try? JSONDecoder().decode([RecordedTake].self, from: data) { takes = items }
+                           selectedTake = payload["selected_take"] as? String ?? ""
+                           reviewFrame = payload["review_frame"] as? Int ?? 0
+                           reviewPlaying = payload["review_playing"] as? Bool ?? false
                        }
                        if object["type"] as? String == "paired" {
                         guard !paired else { return }
                         paired = true; isConnecting = false; isConnected = true; status = "Paired"
                         supportsPreviewControl = (object["capabilities"] as? [String] ?? []).contains("preview-control")
+                        supportsTakeBrowser = (object["capabilities"] as? [String] ?? []).contains("take-browser")
                         // Optional: the Blender add-on may send {"type":"paired","payload":{"name":"My PC"}}.
                         let name = (object["payload"] as? [String: Any])?["name"] as? String
                         remember(name: name)
@@ -218,6 +229,11 @@ final class CameraModel: NSObject, ObservableObject, ARSessionDelegate {
         send("command", ["name": name])
     }
     func setting(_ name: String, _ value: Double) { send("settings", [name: value]) }
+    func takeCommand(_ operation: String, id: String = "", extra: [String: Any] = [:]) {
+        guard supportsTakeBrowser, !isRecording else { return }
+        var payload = extra; payload["operation"] = operation; payload["id"] = id
+        send("take", payload)
+    }
     private func pushSettings() { send("settings", ["lens": lens, "focus": focus, "aperture": aperture]) }
 
     func connect(to computer: SavedComputer) { address = computer.address; connect() }
@@ -257,6 +273,7 @@ final class CameraModel: NSObject, ObservableObject, ARSessionDelegate {
     func disconnect() {
         UIDevice.current.endGeneratingDeviceOrientationNotifications()
         trackingReady = false; orientationGate = TrackingOrientation()
+        supportsTakeBrowser = false; takes = []; selectedTake = ""; reviewPlaying = false
         heartbeat?.cancel(); heartbeat = nil
         paired = false; isConnected = false; isConnecting = false; quality = "Not tracking"; ar.pause(); motion.stopDeviceMotionUpdates()
         previewImage = nil; previewFPS = 0; lastPreviewTime = 0; setRecording(false); activeComputer = nil
