@@ -51,9 +51,11 @@ struct TakeBrowserView: View {
 
 struct TakePlaybackBar: View {
     @ObservedObject var model: CameraModel
+    var compact = false
     var body: some View {
         if let take = model.takes.first(where: { $0.id == model.selectedTake }) {
-            HStack {
+            let layout = compact ? AnyLayout(VStackLayout(alignment:.leading,spacing:8)) : AnyLayout(HStackLayout())
+            layout {
                 Button { model.takeCommand("live") } label: { Image(systemName: "video.fill") }
                     .accessibilityLabel("Return to live camera")
                 Button { model.takeCommand(model.reviewPlaying ? "pause" : "play", id: take.id) } label: {

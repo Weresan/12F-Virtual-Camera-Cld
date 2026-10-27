@@ -5,6 +5,7 @@ struct LiveCameraView: View {
     @ObservedObject var model: CameraModel
     @State private var showControls = false
     @State private var showTakes = false
+    @State private var portraitLayout = false
     @AppStorage("compositionGuide") private var guideChoice = GuideMode.thirds.rawValue
     @State private var monitorZoom = 1.0
     @State private var pinchStart = 1.0
@@ -25,15 +26,30 @@ struct LiveCameraView: View {
         .overlay(alignment: .trailing) { rail.padding(.trailing, 12) }
         .overlay {
             if !model.trackingReady && model.monitorSource == "LIVE" {
-                Label("Hold phone in landscape — tracking paused", systemImage: "iphone.gen3.radiowaves.left.and.right")
-                    .font(.headline).padding().background(Theme.background.opacity(0.95), in: RoundedRectangle(cornerRadius: 12))
-                    .allowsHitTesting(false)
+                Button { model.activateTracking() } label: {
+                    Label(model.activationPrompt, systemImage: "hand.tap.fill")
+                        .font(.headline).multilineTextAlignment(.center).padding(22)
+                        .background(Theme.background.opacity(0.95), in: RoundedRectangle(cornerRadius: 16))
+                }.padding(30).buttonStyle(.plain).tint(Theme.accent)
             }
         }
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
         .tint(Theme.accent)
         .sheet(isPresented: $showTakes) { TakeBrowserView(model: model) }
+        .sheet(isPresented: Binding(get: { showControls && portraitLayout }, set: { showControls = $0 })) {
+            NavigationStack {
+                Form {
+                    ControlSlider(title: "Zoom / Lens",valueText: String(format:"%.0f mm",model.lens),value: settingBinding("lens"),range:8...300)
+                    ControlSlider(title: "Focus",valueText:String(format:"%.1f m",model.focus),value:logBinding(settingBinding("focus"),min:0.1,max:100),range:0...1)
+                    ControlSlider(title: "Aperture",valueText:String(format:"f/%.1f",model.aperture),value:settingBinding("aperture"),range:0.7...22)
+                }.navigationTitle("Camera controls").toolbar { Button("Done") { showControls = false } }
+            }.tint(Theme.accent)
+        }
+        .background(GeometryReader { geometry in
+            Color.clear.onAppear { portraitLayout = geometry.size.height > geometry.size.width }
+                .onChange(of: geometry.size) { portraitLayout = $0.height > $0.width }
+        })
     }
 
     // MARK: Preview
@@ -89,7 +105,7 @@ struct LiveCameraView: View {
             HStack(spacing: 8) {
                 Circle().fill(qualityColor).frame(width: 9, height: 9)
                 Text(model.cameraName).font(.footnote.weight(.semibold))
-                Text(model.status).font(.footnote).foregroundStyle(.secondary).lineLimit(1)
+                if !portraitLayout { Text(model.status).font(.footnote).foregroundStyle(.secondary).lineLimit(1) }
             }
             .padding(.horizontal, 12).frame(height: 40)
             .background(.ultraThinMaterial, in: Capsule())
@@ -98,7 +114,7 @@ struct LiveCameraView: View {
 
             if let start = model.recordingStart { RecordingTimer(start: start) }
 
-            TimelineView(.periodic(from: .now, by: 0.5)) { clock in
+            if !portraitLayout { TimelineView(.periodic(from: .now, by: 0.5)) { clock in
                 let fresh = model.previewReceivedAt.map { clock.date.timeIntervalSince($0) < 2 } ?? false
                 Text("\(fresh ? Int(model.previewFPS.rounded()) : 0) fps · \(model.quality)")
             }
@@ -106,6 +122,7 @@ struct LiveCameraView: View {
                 .padding(.horizontal, 10).frame(height: 28)
                 .background(.ultraThinMaterial, in: Capsule())
                 .padding(.trailing, 80) // keep clear of the right-hand rail
+            }
         }
     }
 
@@ -136,7 +153,7 @@ struct LiveCameraView: View {
                 }
                 .animation(.easeInOut(duration: 0.2), value: model.isRecording)
             }
-            .disabled(!model.isRecording && (model.needsRecenter || model.quality != "normal"))
+            .disabled(!model.isRecording && (!model.trackingReady || model.needsRecenter || model.quality != "normal"))
             RailButton(symbol: "slider.horizontal.3", label: "Lens") {
                 withAnimation(.easeInOut(duration: 0.2)) { showControls.toggle() }
             }
@@ -166,14 +183,15 @@ struct LiveCameraView: View {
     // MARK: Bottom bar
 
     @ViewBuilder private var bottomBar: some View {
-        HStack {
+        let layout = portraitLayout ? AnyLayout(VStackLayout(alignment:.leading,spacing:8)) : AnyLayout(HStackLayout())
+        layout {
             Button { showTakes = true } label: {
                 Label("Takes",systemImage: "film.stack").font(.footnote.weight(.semibold))
                     .padding(10).background(.ultraThinMaterial,in:Capsule())
             }.tint(Theme.accent)
             if model.monitorSource == "TAKE" {
-                TakePlaybackBar(model: model)
-            } else if showControls {
+                TakePlaybackBar(model: model, compact: portraitLayout)
+            } else if showControls && !portraitLayout {
                 controlsPanel
             } else {
                 Button { withAnimation(.easeInOut(duration: 0.2)) { showControls = true } } label: {
@@ -183,7 +201,7 @@ struct LiveCameraView: View {
                         .background(.ultraThinMaterial, in: Capsule())
                 }.tint(.white)
             }
-            Spacer()
+            if !portraitLayout { Spacer() }
         }
         .padding(.trailing, 90)
     }

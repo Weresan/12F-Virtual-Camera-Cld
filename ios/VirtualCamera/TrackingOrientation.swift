@@ -1,20 +1,19 @@
 import Foundation
 
-/// A physical landscape hold must settle before calibration; UI rotation is irrelevant.
+/// Explicit activation fixes a camera basis until recenter, tracking loss or disconnect.
 struct TrackingOrientation {
-    private var candidate = 0
-    private var since = 0.0
-    private var active = 0
+    private(set) var side: Int?
+    private var needsCalibration = false
 
-    mutating func update(side: Int, time: Double) -> (ready: Bool, recalibrate: Bool) {
-        guard side != 0 else {
-            candidate = 0; active = 0
-            return (false, false)
-        }
-        if candidate != side { candidate = side; since = time; active = 0 }
-        guard time - since >= 0.5 else { return (false, false) }
-        let changed = active != side
-        active = side
-        return (true, changed)
+    mutating func activate(side: Int) -> Bool {
+        guard (1...4).contains(side) else { return false }
+        self.side = side; needsCalibration = true
+        return true
+    }
+    mutating func update(normal: Bool) -> (ready: Bool, recalibrate: Bool) {
+        guard normal else { self = TrackingOrientation(); return (false, false) }
+        guard side != nil else { return (false, false) }
+        let calibrate = needsCalibration; needsCalibration = false
+        return (true, calibrate)
     }
 }

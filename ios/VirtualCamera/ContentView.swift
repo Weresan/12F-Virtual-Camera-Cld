@@ -35,7 +35,7 @@ struct ContentView: View {
         }
         .onChange(of: phase) { if $0 == .background { model.suspend() } }
         .onChange(of: model.isConnected) { connected in
-            OrientationControl.apply(connected ? .landscape : .allButUpsideDown)
+            OrientationControl.apply(.allButUpsideDown)
             UIApplication.shared.isIdleTimerDisabled = connected
         }
     }
