@@ -24,13 +24,18 @@ jobs:
           xcodebuild -project ios/VirtualCamera.xcodeproj -scheme VirtualCamera
           -configuration Release -sdk iphoneos -destination 'generic/platform=iOS'
           -derivedDataPath ios/DerivedData CODE_SIGNING_ALLOWED=NO build
-      - name: Archive unsigned app bundles
+      - name: Package unsigned IPAs for Sideloadly
         run: |
           mkdir -p ios/build
-          ditto -c -k --keepParent ios/DerivedData/Build/Products/Debug-iphoneos/VirtualCamera.app ios/build/VirtualCamera-Debug-unsigned.zip
-          ditto -c -k --keepParent ios/DerivedData/Build/Products/Release-iphoneos/VirtualCamera.app ios/build/VirtualCamera-Release-unsigned.zip
+          for config in Debug Release; do
+            rm -rf ios/build/Payload
+            mkdir -p ios/build/Payload
+            cp -R ios/DerivedData/Build/Products/$config-iphoneos/VirtualCamera.app ios/build/Payload/
+            (cd ios/build && zip -qr 12F-Virtual-Camera-$config-unsigned.ipa Payload)
+          done
+          rm -rf ios/build/Payload
       - uses: actions/upload-artifact@v4
         with:
           name: 12F-iOS-unsigned-apps
-          path: ios/build/*.zip
+          path: ios/build/*.ipa
           retention-days: 7
