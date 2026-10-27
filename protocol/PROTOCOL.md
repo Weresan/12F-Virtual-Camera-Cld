@@ -31,3 +31,13 @@ Server messages:
 WebSocket ping every 5 s, timeout 10 s. Consumer pose timeout 500 ms; jitter/gaps over 250 ms reject animation generation but preserve journal/JSON samples. A saturated inbound queue closes with 1013; consumers stop on timeout. Current implementation uses TCP order and offline resampling, not a live interpolated jitter buffer.
 
 Future protocol revisions: capture timestamps separate from send timestamps; clock sync measurements, command acknowledgements/IDs, stream capability negotiation, persistent paired identity, rig and lens curves, preview frame metadata, and tracking epoch changes. Increment `v` for incompatible changes; optional new fields must not silently acquire mandatory semantics in v1.
+
+
+## Capability extension: take-browser (0.2.3)
+
+See [take and monitor extension](../docs/RELEASE_0.2.3.md#protocol-extension). The v1 envelope is retained. Take operations resolve opaque IDs only within active-scene recorded cameras. Viewer authentication uses a distinct read-only credential and does not enter the main-thread command queue. Up to four viewers share the operator-selected feed; they cannot change review or camera state.
+
+
+## Independent review and activation (0.2.4)
+
+See [0.2.4 protocol and access](../docs/RELEASE_0.2.4.md#protocol-and-access). Viewer-local review requests and mode changes never enter the operator control queue. Generated JPEG review frames require the separate monitor bearer token. Native pose rotation uses the screen-aligned ARCamera basis latched at explicit activation; UI rotation does not swap that basis during a take. The v1 envelope and xyzw order remain unchanged.
