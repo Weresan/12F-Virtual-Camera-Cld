@@ -140,6 +140,14 @@ struct ManualEntrySheet: View {
                     Text("Use only on trusted Wi-Fi. Release builds require HTTPS.")
                 }
                 #endif
+                Section("Tracking") {
+                    Picker("Update rate",selection:$model.trackingFPS) {
+                        Text("30 Hz").tag(30.0)
+                        Text("60 Hz").tag(60.0)
+                    }
+                    Text("Applied when connecting. Live preview FPS is set in Blender; actual performance depends on the scene and Wi-Fi.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             }
             .navigationTitle("Enter Link")
             .navigationBarTitleDisplayMode(.inline)

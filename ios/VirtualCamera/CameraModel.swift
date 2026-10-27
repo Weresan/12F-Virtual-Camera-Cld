@@ -33,6 +33,7 @@ final class CameraModel: NSObject, ObservableObject, ARSessionDelegate {
     @Published var needsRecenter = false
     @Published var monitorSource = "LIVE"
     @Published var cameraName = "12F Camera"
+    @Published var trackingFPS = 60.0
     let ar = ARSession()
     private let motion = CMMotionManager()
     private var socket: URLSessionWebSocketTask?
@@ -148,6 +149,9 @@ final class CameraModel: NSObject, ObservableObject, ARSessionDelegate {
         }
         let configuration = ARWorldTrackingConfiguration()
         configuration.worldAlignment = .gravity
+        if let format = ARWorldTrackingConfiguration.supportedVideoFormats.first(where: { Double($0.framesPerSecond) >= trackingFPS }) {
+            configuration.videoFormat = format
+        }
         ar.run(configuration, options: [.resetTracking, .removeExistingAnchors])
         lastFrame = 0; initialCalibration = false
         if motion.isDeviceMotionAvailable {
@@ -174,7 +178,7 @@ final class CameraModel: NSObject, ObservableObject, ARSessionDelegate {
         let rotation = [q.imag.x,q.imag.y,q.imag.z,q.real]
         Task { @MainActor in
             guard paired else { return }
-            guard timestamp - lastFrame >= 1.0/30 else { return }
+            guard timestamp - lastFrame >= 1.0/max(1,trackingFPS)-0.001 else { return }
             if tracking == "normal" && !initialCalibration {
                 command("recenter"); initialCalibration = true
             }
