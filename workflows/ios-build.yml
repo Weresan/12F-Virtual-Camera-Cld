@@ -1,29 +1,41 @@
 name: iOS compile and pairing tests
+
 on:
   workflow_dispatch:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
 permissions:
   contents: read
+
 jobs:
   build:
     runs-on: macos-15
     timeout-minutes: 25
+
     steps:
       - uses: actions/checkout@v4
+
       - name: Test pairing parser (Debug and Release)
         working-directory: ios
         run: |
           swift test
           swift test -c release
+
       - name: Compile native app for iPhone without signing
         run: >-
           xcodebuild -project ios/VirtualCamera.xcodeproj -scheme VirtualCamera
           -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS'
           -derivedDataPath ios/DerivedData CODE_SIGNING_ALLOWED=NO build
+
       - name: Compile production configuration
         run: >-
           xcodebuild -project ios/VirtualCamera.xcodeproj -scheme VirtualCamera
           -configuration Release -sdk iphoneos -destination 'generic/platform=iOS'
           -derivedDataPath ios/DerivedData CODE_SIGNING_ALLOWED=NO build
+
       - name: Package unsigned IPAs for Sideloadly
         run: |
           mkdir -p ios/build
@@ -34,6 +46,7 @@ jobs:
             (cd ios/build && zip -qr 12F-Virtual-Camera-$config-unsigned.ipa Payload)
           done
           rm -rf ios/build/Payload
+
       - uses: actions/upload-artifact@v4
         with:
           name: 12F-iOS-unsigned-apps
