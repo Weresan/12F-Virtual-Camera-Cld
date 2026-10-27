@@ -34,6 +34,8 @@ final class CameraModel: NSObject, ObservableObject, ARSessionDelegate {
     @Published var monitorSource = "LIVE"
     @Published var cameraName = "12F Camera"
     @Published var trackingFPS = 60.0
+    @Published var trackingReady = false
+    private var orientationGate = TrackingOrientation()
     let ar = ARSession()
     private let motion = CMMotionManager()
     private var socket: URLSessionWebSocketTask?
@@ -153,6 +155,8 @@ final class CameraModel: NSObject, ObservableObject, ARSessionDelegate {
             configuration.videoFormat = format
         }
         ar.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+        UIDevice.current.beginGeneratingDeviceOrientationNotifications()
+        orientationGate = TrackingOrientation(); trackingReady = false
         lastFrame = 0; initialCalibration = false
         if motion.isDeviceMotionAvailable {
             motion.deviceMotionUpdateInterval = 1.0 / 30
@@ -179,6 +183,19 @@ final class CameraModel: NSObject, ObservableObject, ARSessionDelegate {
         Task { @MainActor in
             guard paired else { return }
             guard timestamp - lastFrame >= 1.0/max(1,trackingFPS)-0.001 else { return }
+            let orientation = UIDevice.current.orientation
+            let side = orientation == .landscapeLeft ? 1 : (orientation == .landscapeRight ? 2 : 0)
+            let hold = orientationGate.update(side: side, time: timestamp)
+            if !hold.ready {
+                if trackingReady { command("stop") }
+                trackingReady = false; initialCalibration = false
+                quality = "Hold phone in landscape to track"
+                lastFrame = timestamp
+                send("pose", ["position": p, "rotation": rotation, "quality": "lost"])
+                return
+            }
+            trackingReady = true
+            if hold.recalibrate { initialCalibration = false }
             if tracking == "normal" && !initialCalibration {
                 command("recenter"); initialCalibration = true
             }
@@ -196,7 +213,10 @@ final class CameraModel: NSObject, ObservableObject, ARSessionDelegate {
     nonisolated func session(_ session: ARSession, didFailWithError error: Error) {
         Task { @MainActor in fail(error) }
     }
-    func command(_ name: String) { send("command", ["name": name]) }
+    func command(_ name: String) {
+        if name == "record" && !trackingReady { return }
+        send("command", ["name": name])
+    }
     func setting(_ name: String, _ value: Double) { send("settings", [name: value]) }
     private func pushSettings() { send("settings", ["lens": lens, "focus": focus, "aperture": aperture]) }
 
@@ -235,6 +255,8 @@ final class CameraModel: NSObject, ObservableObject, ARSessionDelegate {
     }
     func suspend() { command("stop"); disconnect(); status = "Paused — reconnect when ready" }
     func disconnect() {
+        UIDevice.current.endGeneratingDeviceOrientationNotifications()
+        trackingReady = false; orientationGate = TrackingOrientation()
         heartbeat?.cancel(); heartbeat = nil
         paired = false; isConnected = false; isConnecting = false; quality = "Not tracking"; ar.pause(); motion.stopDeviceMotionUpdates()
         previewImage = nil; previewFPS = 0; lastPreviewTime = 0; setRecording(false); activeComputer = nil

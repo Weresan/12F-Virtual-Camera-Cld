@@ -22,6 +22,13 @@ struct LiveCameraView: View {
             .padding(.horizontal, 12).padding(.vertical, 8)
         }
         .overlay(alignment: .trailing) { rail.padding(.trailing, 12) }
+        .overlay {
+            if !model.trackingReady {
+                Label("Hold phone in landscape — tracking paused", systemImage: "iphone.gen3.radiowaves.left.and.right")
+                    .font(.headline).padding().background(Theme.background.opacity(0.95), in: RoundedRectangle(cornerRadius: 12))
+                    .allowsHitTesting(false)
+            }
+        }
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
         .tint(Theme.accent)
