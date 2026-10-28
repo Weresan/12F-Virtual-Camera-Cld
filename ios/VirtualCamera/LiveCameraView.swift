@@ -105,6 +105,9 @@ struct LiveCameraView: View {
             HStack(spacing: 8) {
                 Circle().fill(qualityColor).frame(width: 9, height: 9)
                 Text(model.cameraName).font(.footnote.weight(.semibold))
+                if !model.isRecording && !model.lastStopReason.isEmpty {
+                    Text(model.lastStopReason).font(.caption2).foregroundStyle(.secondary).lineLimit(2)
+                }
                 if !portraitLayout { Text(model.status).font(.footnote).foregroundStyle(.secondary).lineLimit(1) }
             }
             .padding(.horizontal, 12).frame(height: 40)
